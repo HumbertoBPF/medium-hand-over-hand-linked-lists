@@ -9,8 +9,8 @@ from linked_lists import LinkedList, SimpleLinkedList, StandardConcurrentLinkedL
 
 # Maximum number of threads to be used when comparing the performance of the linked lists
 N_THREADS = 8
-# Number of items to inser in the linked list before the lookup comparison
-NUM_ITEMS = 10**4
+# Number of items to insert in the linked list before the lookup comparison
+NUM_ITEMS = 10**6
 
 def test_simple_linked_list():
     linked_list = SimpleLinkedList()
@@ -129,14 +129,11 @@ def insert_in_threads(linked_list: LinkedList, n_threads: int) -> float:
     linked_list.clear()
     threads = []
 
-    # Number of insert operations to be run in each thread
-    n_inserts_per_thread = 10 ** 5
-
     # Reset measurement mixin
     linked_list.reset_measurement()
 
     for i in range(n_threads):
-        threads.append(threading.Thread(target=insert_n_times, args=(linked_list, n_inserts_per_thread, 2 * i * n_inserts_per_thread)))
+        threads.append(threading.Thread(target=insert_n_times, args=(linked_list, 1, 2 * i)))
 
     # Call MeasurementMixin.measure_time_to_run to measure how long all threads take to execute
     return MeasurementMixin.measure_time_to_run(lambda : start_threads(threads))
@@ -151,14 +148,11 @@ def lookup_in_threads(linked_list: LinkedList, n_threads: int) -> float:
     """
     threads = []
 
-    # Number of lookup operations to be run in each thread
-    n_lookups_per_thread = 10 ** 4
-
     # Reset measurement mixin
     linked_list.reset_measurement()
 
     for i in range(n_threads):
-        threads.append(threading.Thread(target=lookup_n_times, args=(linked_list, n_lookups_per_thread)))
+        threads.append(threading.Thread(target=lookup_n_times, args=(linked_list, 1)))
 
     # Call MeasurementMixin.measure_time_to_run to measure how long all threads take to execute
     return MeasurementMixin.measure_time_to_run(lambda : start_threads(threads))
@@ -175,14 +169,11 @@ def get_lookup_response_time(linked_list: LinkedList, n_threads: int) -> float:
     """
     threads = []
 
-    # Number of lookup operations to be run in each thread
-    n_lookups_per_thread = 10 ** 4
-
     # Reset measurement mixin
     linked_list.reset_measurement()
 
     for i in range(n_threads):
-        threads.append(threading.Thread(target=lookup_n_times, args=(linked_list, n_lookups_per_thread)))
+        threads.append(threading.Thread(target=lookup_n_times, args=(linked_list, 1)))
 
     start_threads(threads)
     response_time = linked_list.response_time.total_seconds()
@@ -211,7 +202,7 @@ def build_and_show_comparative_plot(
     ax.legend()
     ax.set_title(f"{linked_list_1_label} vs {linked_list_2_label}")
     ax.set_xlabel("Number of threads")
-    ax.set_ylabel("Time")
+    ax.set_ylabel("Time (seconds)")
     plt.show()
 
 
@@ -365,13 +356,13 @@ def hybrid_hand_over_hand_linked_list_performance_vs_capacity():
     lookup_time_array = []
     response_time_array = []
 
-    for n in range(0, 11):
+    for n in range(0, 21):
         capacity = 2 ** n
 
-        linked_list_for_lookup = initialize_linked_list(HybridHandOverhandLinkedList(capacity=capacity), NUM_ITEMS)
+        linked_list_for_lookup = initialize_linked_list(linked_list=HybridHandOverhandLinkedList(capacity=capacity), n=NUM_ITEMS)
         lookup_time = lookup_in_threads(linked_list=linked_list_for_lookup, n_threads=8)
 
-        linked_list_for_response_time = initialize_linked_list(HybridHandOverhandLinkedList(capacity=capacity), NUM_ITEMS)
+        linked_list_for_response_time = initialize_linked_list(linked_list=HybridHandOverhandLinkedList(capacity=capacity), n=NUM_ITEMS)
         response_time = get_lookup_response_time(linked_list=linked_list_for_response_time, n_threads=8)
 
         capacity_array.append(capacity)
@@ -383,7 +374,7 @@ def hybrid_hand_over_hand_linked_list_performance_vs_capacity():
     ax.legend()
     ax.set_title("Lookup time varying capacity of a hybrid hand-over-hand linked list")
     ax.set_xlabel("Capacity")
-    ax.set_ylabel("Lookup time")
+    ax.set_ylabel("Lookup time (seconds)")
     plt.show()
 
     fig, ax = plt.subplots()
@@ -391,7 +382,7 @@ def hybrid_hand_over_hand_linked_list_performance_vs_capacity():
     ax.legend()
     ax.set_title("Response time varying capacity of a hybrid hand-over-hand linked list")
     ax.set_xlabel("Capacity")
-    ax.set_ylabel("Response time")
+    ax.set_ylabel("Response time (seconds)")
     plt.show()
 
 
@@ -400,6 +391,12 @@ def find_item(target: int, linked_list: LinkedList):
 
 
 if __name__ == "__main__":
+    compare_simple_and_standard_concurrent_safe_linked_lists()
+    compare_standard_concurrent_safe_and_hand_over_hand_linked_lists()
+    compare_hand_over_hand_and_hybrid_hand_over_hand_linked_lists()
+
+    hybrid_hand_over_hand_linked_list_performance_vs_capacity()
+
     linked_list = initialize_linked_list(linked_list=SimpleLinkedList(), n=10)
     test_concurrent_inserts_at_linked_list(linked_list=linked_list)
     print("\n====================================================================")
